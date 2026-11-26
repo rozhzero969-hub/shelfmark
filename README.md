@@ -4,6 +4,8 @@ Shelfmark makes printable barcode stickers for store items and stockroom invento
 
 ## Open Shelfmark
 
+- **In your browser.** [Open the online barcode label maker](https://rozhzero969-hub.github.io/shelfmark/).
+
 - **Windows or macOS.** Download `Shelfmark.html` from [Releases](../../releases/latest) and open it in a modern browser. Keep the file in the same location to reuse its queue.
 - **macOS Dock.** Download and unzip `Shelfmark-macOS.zip`, move `Shelfmark.app` to Applications, and drag it to the Dock. The launcher opens Shelfmark in your default browser. If macOS blocks the locally signed launcher, the standalone HTML file works directly in the browser.
 
