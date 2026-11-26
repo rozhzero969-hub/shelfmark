@@ -27,7 +27,7 @@ function persist() {
     const draft = Object.fromEntries(Object.entries(inputs).map(([id, input]) => [id, input.value]));
     localStorage.setItem(storageKey, JSON.stringify({ draft, queue }));
   } catch {
-    document.querySelector("footer span:last-child").textContent = "Browser storage is unavailable. Keep this window open to keep your queue.";
+    byId("storage-note").textContent = "Browser storage is unavailable. Keep this window open to keep your queue.";
   }
 }
 
@@ -84,7 +84,7 @@ function makeSticker(item) {
   let { code } = item;
   const spec = Object.hasOwn(formats, format) && formats[format];
   if (!spec || typeof name !== "string" || typeof code !== "string") throw Error("Enter valid label details.");
-  if (!validSize(width, height)) throw Error("Use a width of 30–105 mm and a height of 20–100 mm.");
+  if (!validSize(width, height)) throw Error("Use a width of 30–105 mm and a height of 20–100 mm.", { cause: "dimensions" });
   if (!code) throw Error("Enter a barcode value.");
   if (spec.digits) {
     if (!/^\d+$/.test(code) || ![spec.digits - 1, spec.digits].includes(code.length)) {
@@ -109,13 +109,13 @@ function makeSticker(item) {
   const modules = pattern.length + quietLeft + quietRight;
   const moduleWidth = Math.min(retail ? 0.33 : 0.55, (width - 4) / modules);
   if (moduleWidth < (retail ? 0.264 : 0.25)) {
-    throw Error("Choose a wider sticker so the barcode bars are wide enough to scan.");
+    throw Error("Choose a wider sticker so the barcode bars are wide enough to scan.", { cause: "size" });
   }
 
   const fromTop = name ? 8 : 3;
   const barHeight = Math.min(retail ? 22.85 : 28, height - fromTop - (retail ? 4.5 : 6));
   if (retail && barHeight < 18.28) {
-    throw Error("Choose a taller sticker for this retail barcode.");
+    throw Error("Choose a taller sticker for this retail barcode.", { cause: "size" });
   }
 
   const svg = svgElement("svg", {
@@ -187,12 +187,14 @@ function renderEditor() {
   byId("custom").hidden = item.size !== "custom";
   byId("preview-format").textContent = spec.name;
   byId("reset").textContent = editingId ? "Cancel edit" : "Clear";
-  byId("save").textContent = editingId ? "Update queued label" : "＋ Add to print queue";
+  byId("save-label").textContent = editingId ? "Update queued label" : "Add to print queue";
+  byId("save-icon").hidden = Boolean(editingId);
   byId("measure-text").textContent = `${item.width} mm`;
   byId("dimensions").textContent = `${item.width} × ${item.height} mm`;
 
   current = null;
   let error = "";
+  let invalidField;
   const preview = byId("sticker");
   preview.replaceChildren();
   try {
@@ -205,20 +207,31 @@ function renderEditor() {
     previewSvg.style.height = "auto";
     preview.append(previewSvg);
   } catch (problem) {
-    if (item.code || !validSize(item.width, item.height)) error = problem.message;
+    if (item.code || problem.cause === "dimensions") {
+      error = problem.message;
+      invalidField = problem.cause || "code";
+    }
   }
-  if (!validCopies(item.copies)) error ||= "Choose between 1 and 200 copies.";
+  const copiesValid = validCopies(item.copies);
+  inputs.code.setAttribute("aria-invalid", invalidField === "code");
+  inputs.size.setAttribute("aria-invalid", invalidField === "size");
+  inputs.width.setAttribute("aria-invalid", invalidField === "dimensions" && (item.width < 30 || item.width > 105));
+  inputs.height.setAttribute("aria-invalid", invalidField === "dimensions" && (item.height < 20 || item.height > 100));
+  inputs.copies.setAttribute("aria-invalid", !copiesValid);
+  if (!copiesValid) error ||= "Choose between 1 and 200 copies.";
   byId("error").textContent = error;
   byId("error").hidden = !error;
   byId("preview-empty").hidden = Boolean(current);
   byId("measure").hidden = !current;
   byId("dimensions").hidden = !current;
   byId("download").disabled = !current;
-  byId("print").disabled = !current || !validCopies(item.copies);
-  byId("save").disabled = !current || !validCopies(item.copies);
-  byId("sizing-text").textContent = current && current.code !== item.code
+  byId("print").disabled = !current || !copiesValid;
+  byId("save").disabled = !current || !copiesValid;
+  const checkNote = byId("check-note");
+  checkNote.textContent = current && current.code !== item.code
     ? `Check digit added. This label scans as ${current.code}.`
-    : "Print at 100% or Actual Size for accurate dimensions.";
+    : "";
+  checkNote.hidden = !checkNote.textContent;
 }
 
 function clearEditor() {
@@ -253,11 +266,13 @@ function renderQueue() {
   byId("count").setAttribute("aria-label", `${totalCopies()} total copies`);
   byId("print-queue").disabled = queue.length === 0;
   const mixed = queue.some((item) => item.width !== queue[0].width || item.height !== queue[0].height);
-  byId("print-help").textContent = inputs.paper.value === "roll"
-    ? mixed
-      ? "A roll print job needs one sticker size. Choose a sheet layout to print mixed sizes together."
-      : "One sticker per page. Set the matching paper size in your printer settings."
-    : "Sheet layout uses 8 mm margins and 2 mm gaps. Use blank sticker sheets and print at 100%.";
+  const roll = inputs.paper.value === "roll";
+  byId("print-help").textContent = roll
+    ? "Match your printer paper size and print at 100%."
+    : "Use blank sticker sheets and print at 100%. Margins are 8 mm with 2 mm gaps.";
+  const queueHelp = byId("queue-help");
+  queueHelp.hidden = !roll || !mixed;
+  queueHelp.textContent = queueHelp.hidden ? "" : "Choose A4 or US Letter in Paper layout to print these mixed sizes together.";
   if (!queue.length) {
     const empty = document.createElement("p");
     empty.className = "queue-empty";
@@ -431,6 +446,9 @@ byId("print").addEventListener("click", () => {
 byId("print-queue").addEventListener("click", () => { if (queue.length) printLabels(queue); });
 inputs.paper.addEventListener("change", () => { renderQueue(); persist(); });
 inputs["export-format"].addEventListener("change", persist);
+if (window.location.protocol !== "file:") {
+  byId("availability").textContent = "Runs in your browser";
+}
 restore();
 renderEditor();
 renderQueue();

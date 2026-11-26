@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#f5f5fa">
   <title>Shelfmark — Barcode Label Maker</title>
   <!-- STYLES -->
 </head>
@@ -12,22 +13,21 @@
     <div class="shell top-inner">
       <div class="brand">
         <span class="brand-icon" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
-        Shelfmark<span class="brand-period">.</span>
+        Shelfmark
       </div>
-      <span class="offline"><i></i> Works offline</span>
+      <span class="offline"><i></i><span id="availability">Works offline</span></span>
     </div>
   </header>
 
   <main class="shell">
     <section class="intro">
-      <p class="eyebrow">STORE LABELS</p>
-      <h1>Barcode label maker<span>.</span></h1>
-      <p>Create scannable stickers for your products, shelves, and stockroom.</p>
+      <h1>Barcode label maker</h1>
+      <p>Make scannable stickers for your products, shelves, and stockroom.</p>
     </section>
     <div class="workspace">
       <section class="card editor" aria-labelledby="edit-title">
         <div class="section-head">
-          <div><h2 id="edit-title">Label details</h2><p>Enter the value your scanner should read.</p></div>
+          <div><h2 id="edit-title">Create a label</h2></div>
           <button type="button" class="text-button" id="reset">Clear</button>
         </div>
         <form id="editor" novalidate>
@@ -37,7 +37,8 @@
           </div>
           <div class="field">
             <label for="code">Barcode value</label>
-            <input id="code" maxlength="64" spellcheck="false" autocomplete="off" value="1234" aria-describedby="format-help error" required>
+            <input id="code" maxlength="64" spellcheck="false" autocomplete="off" placeholder="e.g. 1234" value="1234" aria-describedby="code-help format-help error" required>
+            <p class="hint" id="code-help">This is what your scanner will read.</p>
           </div>
           <div class="field">
             <label for="format">Barcode format</label>
@@ -48,62 +49,65 @@
             </select>
             <p class="hint" id="format-help"></p>
           </div>
-          <div class="field">
-            <label for="size">Sticker size</label>
-            <select id="size">
-              <option value="60x35">60 × 35 mm — Standard</option>
-              <option value="50x30">50 × 30 mm — Compact</option>
-              <option value="40x25">40 × 25 mm — Small</option>
-              <option value="75x50">75 × 50 mm — Large</option>
-              <option value="custom">Custom size</option>
-            </select>
+          <div class="pair label-settings">
+            <div class="field">
+              <label for="size">Sticker size</label>
+              <select id="size" aria-describedby="error">
+                <option value="60x35">60 × 35 mm</option>
+                <option value="50x30">50 × 30 mm</option>
+                <option value="40x25">40 × 25 mm</option>
+                <option value="75x50">75 × 50 mm</option>
+                <option value="custom">Custom size</option>
+              </select>
+            </div>
+            <div class="field"><label for="copies">Copies</label><input id="copies" type="number" min="1" max="200" value="1" aria-describedby="error" required></div>
           </div>
           <div id="custom" class="pair" hidden>
-            <div class="field"><label for="width">Width (mm)</label><input id="width" type="number" min="30" max="105" step="0.1" value="60"></div>
-            <div class="field"><label for="height">Height (mm)</label><input id="height" type="number" min="20" max="100" step="0.1" value="35"></div>
-          </div>
-          <div class="editor-bottom">
-            <div class="field"><label for="copies">Copies</label><input id="copies" type="number" min="1" max="200" value="1" required></div>
-            <button class="button primary" id="save" type="submit"><span aria-hidden="true">＋</span> Add to print queue</button>
+            <div class="field"><label for="width">Width (mm)</label><input id="width" type="number" min="30" max="105" step="0.1" value="60" aria-describedby="error"></div>
+            <div class="field"><label for="height">Height (mm)</label><input id="height" type="number" min="20" max="100" step="0.1" value="35" aria-describedby="error"></div>
           </div>
           <p id="error" class="error" role="status" hidden></p>
+          <button class="button primary" id="save" type="submit"><span id="save-icon" class="plus" aria-hidden="true"></span><span id="save-label">Add to print queue</span></button>
         </form>
       </section>
 
       <section class="card preview" aria-labelledby="preview-title">
         <div class="section-head">
-          <div><h2 id="preview-title">Live preview</h2><p>See how your sticker will look on the item.</p></div>
+          <div><h2 id="preview-title">Live preview</h2></div>
           <span class="format-pill" id="preview-format">Code 128</span>
         </div>
         <div class="preview-stage">
           <div class="measure" id="measure"><span></span><output id="measure-text">60 mm</output><span></span></div>
           <div id="sticker" aria-label="Sticker preview"></div>
-          <p class="preview-empty" id="preview-empty" hidden>Enter a valid barcode value to preview the sticker.</p>
+          <p class="preview-empty" id="preview-empty" hidden>Enter a barcode value to see your label here.</p>
           <div class="dimensions" id="dimensions">60 × 35 mm</div>
         </div>
+        <p id="check-note" class="hint check-note" role="status" hidden></p>
         <div class="preview-actions">
+          <div class="field">
+            <label for="paper">Paper layout</label>
+            <select id="paper" aria-describedby="print-help"><option value="roll">Label roll</option><option value="a4">A4 sheet</option><option value="letter">US Letter sheet</option></select>
+          </div>
+          <button type="button" class="button primary" id="print"><span class="printer" aria-hidden="true"></span> Print sticker</button>
+        </div>
+        <p id="print-help" class="hint print-help">Match your printer paper size and print at 100%.</p>
+        <div class="export-actions">
           <label class="sr-only" for="export-format">Download format</label>
           <select id="export-format" class="export-format"><option value="svg">SVG</option><option value="png">PNG</option></select>
-          <button type="button" class="button secondary" id="download"><span aria-hidden="true">↓</span> Download</button>
-          <button type="button" class="button dark" id="print"><span class="printer" aria-hidden="true"></span> Print sticker</button>
+          <button type="button" class="button secondary" id="download"><span class="download-icon" aria-hidden="true">↓</span> Download</button>
         </div>
-        <p id="sizing-note" class="preview-note"><i aria-hidden="true"></i><span id="sizing-text">Print at 100% or Actual Size for accurate dimensions.</span></p>
       </section>
     </div>
 
     <section class="card queue" aria-labelledby="queue-title">
       <div class="section-head">
         <div><h2 id="queue-title">Print queue <span class="count" id="count">0</span></h2><p>Collect several labels and print them together.</p></div>
-        <div class="queue-actions">
-          <label class="sr-only" for="paper">Print layout</label>
-          <select id="paper"><option value="roll">Sticker roll / single labels</option><option value="a4">A4 sheet</option><option value="letter">US Letter sheet</option></select>
-          <button type="button" class="button dark" id="print-queue" disabled><span class="printer" aria-hidden="true"></span> Print queue</button>
-        </div>
+        <button type="button" class="button secondary" id="print-queue" disabled><span class="printer" aria-hidden="true"></span> Print queue</button>
       </div>
       <div id="queue-items"></div>
-      <p id="print-help" class="hint">One sticker per page. Set the matching paper size in your printer settings.</p>
+      <p id="queue-help" class="hint queue-help" hidden></p>
     </section>
-    <footer><span>Shelfmark</span><span>Labels and queue stay in this browser.</span></footer>
+    <footer><span>Shelfmark</span><span id="storage-note">Labels and queue stay in this browser.</span></footer>
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
